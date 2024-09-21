@@ -90,8 +90,8 @@ const dbConnect = async () => {
       var transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-          user: "shabujglobaleducation24@gmail.com",
-          pass: "qibl nicy hzea cdfd",
+          user: `${process.env.EMAIL_USER}`,
+          pass: `${process.env.EMAIL_PASS}`,
         },
       });
 
