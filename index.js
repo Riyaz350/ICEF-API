@@ -121,8 +121,10 @@ const dbConnect = async () => {
       transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
           console.log(error);
+          return res.status(500).send({ error: "Failed to send email" });
         } else {
           console.log("Email sent: " + info.response);
+          return res.send({ message: "Email sent successfully" });
         }
       });
     });
@@ -145,8 +147,8 @@ const dbConnect = async () => {
       var transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-          user: "shabujglobaleducation24@gmail.com",
-          pass: "qibl nicy hzea cdfd",
+          user: `${process.env.EMAIL_USER}`,
+          pass: `${process.env.EMAIL_PASS}`,
         },
       });
 
@@ -185,8 +187,10 @@ const dbConnect = async () => {
       transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
           console.log(error);
+          return res.status(500).send({ error: "Failed to send email" });
         } else {
           console.log("Email sent: " + info.response);
+          return res.send({ message: "Email sent successfully" });
         }
       });
     });
