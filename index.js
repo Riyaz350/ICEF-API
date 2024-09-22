@@ -13,11 +13,15 @@ app.use(
       "http://localhost:5174",
       "https://shabuj-global-reg.web.app",
       "https://registration.studyuk.today",
+      'https://registration.studyuk.today/registrations',
+      'https://www.shabujglobal.com/iceflondon'
     ],
     credentials: true,
   })
 );
-app.use(express.json());
+// app.use(express.json());
+app.use(express.json({ limit: '200mb' }));
+
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const sendMeetingEmail = require("./controllers/sendMeetingEmail");
@@ -41,7 +45,7 @@ const dbConnect = async () => {
       res.send("Server is running");
     });
 
-    app.get("/registrations", async (req, res) => {
+    app.get("/registrationsData", async (req, res) => {
       const result = await registrations.find().toArray();
       res.send(result);
     });
