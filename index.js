@@ -123,9 +123,10 @@ const dbConnect = async () => {
           companyDetails,
         } = req.body;
 
-        // Get the uploaded image's filename
+        // Get the uploaded image's filename, or set to null if no image is uploaded
         const imagePath = req.file ? `/files/${req.file.filename}` : null;
 
+        // Safely handle optional fields like companyDetails and image
         const registration = {
           firstName,
           lastName,
@@ -134,21 +135,22 @@ const dbConnect = async () => {
           email,
           password,
           companyDetails: {
-            companyName: companyDetails?.companyName,
-            address: companyDetails?.address,
-            city: companyDetails?.city,
-            website: companyDetails?.website,
-            postcode: companyDetails?.postcode,
-            country: companyDetails?.country,
-            recruitCountry: companyDetails?.recruitCountry,
+            companyName: companyDetails?.companyName || null,
+            address: companyDetails?.address || null,
+            city: companyDetails?.city || null,
+            website: companyDetails?.website || null,
+            postcode: companyDetails?.postcode || null,
+            country: companyDetails?.country || null,
+            recruitCountry: companyDetails?.recruitCountry || null,
           },
           image: {
-            name: req.file?.filename, // Save the filename
-            path: imagePath, // Full file path (for internal use)
+            name: req.file?.filename || null, // Save the filename or set null if no image
+            path: imagePath, // Full file path or null
           },
-          createdAt: new Date(),
+          createdAt: new Date(), // Timestamp
         };
 
+        // Insert registration into the database
         const result = await registrations.insertOne(registration);
         res.status(201).send(result);
       } catch (error) {
