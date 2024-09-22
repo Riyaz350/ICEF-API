@@ -13,15 +13,15 @@ app.use(
       "http://localhost:5174",
       "https://shabuj-global-reg.web.app",
       "https://registration.studyuk.today",
-      'https://registration.studyuk.today/registrations',
-      'https://www.shabujglobal.com/iceflondon'
+      "https://registration.studyuk.today/registrations",
+      "https://www.shabujglobal.com/iceflondon",
     ],
     credentials: true,
   })
 );
 // app.use(express.json());
-app.use(express.json({ limit: '200mb' }));
-
+app.use(express.json({ limit: "200mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const sendMeetingEmail = require("./controllers/sendMeetingEmail");
@@ -63,12 +63,96 @@ const dbConnect = async () => {
       res.send(result);
     });
 
-    app.post(`/registrations`, async (req, res) => {
-      const registration = req.body;
-      const result = await registrations.insertOne(registration);
-      res.send(result);
+    //working on it
+    const fs = require("fs");
+    const multer = require("multer");
+    const path = require("path");
+
+    // Ensure the /files directory exists
+    const filesDirectory = path.join(__dirname, "/files");
+    if (!fs.existsSync(filesDirectory)) {
+      fs.mkdirSync(filesDirectory, { recursive: true });
+    }
+
+    // Multer setup for file uploads
+    const storage = multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, filesDirectory); // Files directory
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        cb(
+          null,
+          file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+        );
+      },
     });
 
+    const upload = multer({
+      storage: storage,
+      limits: { fileSize: 2 * 1024 * 1024 }, // Limit file size to 2MB
+      fileFilter: (req, file, cb) => {
+        const fileTypes = /jpeg|jpg|png/;
+        const extname = fileTypes.test(
+          path.extname(file.originalname).toLowerCase()
+        );
+        const mimetype = fileTypes.test(file.mimetype);
+
+        if (extname && mimetype) {
+          return cb(null, true);
+        } else {
+          cb(new Error("Only .png, .jpg, and .jpeg format allowed!"));
+        }
+      },
+    });
+
+    // Updated POST /registrations endpoint
+    app.post(`/registrations`, upload.single("image"), async (req, res) => {
+      try {
+        const {
+          firstName,
+          lastName,
+          mobileNo,
+          whatsAppNo,
+          email,
+          password,
+          companyDetails,
+        } = req.body;
+
+        // Get the uploaded image's filename
+        const imagePath = req.file ? `/files/${req.file.filename}` : null;
+
+        const registration = {
+          firstName,
+          lastName,
+          mobileNo,
+          whatsAppNo,
+          email,
+          password,
+          companyDetails: {
+            companyName: companyDetails?.companyName,
+            address: companyDetails?.address,
+            city: companyDetails?.city,
+            website: companyDetails?.website,
+            postcode: companyDetails?.postcode,
+            country: companyDetails?.country,
+            recruitCountry: companyDetails?.recruitCountry,
+          },
+          image: {
+            path: imagePath,
+          },
+          createdAt: new Date(), // Optional timestamp field
+        };
+
+        const result = await registrations.insertOne(registration);
+        res.status(201).send(result);
+      } catch (error) {
+        console.error("Error inserting registration:", error.message);
+        res.status(500).send({ error: "Failed to register data" });
+      }
+    });
+
+    //end of store registration data
     app.patch("/registrationPatchStatus/:_id", async (req, res) => {
       const id = req.params._id;
       const query = { _id: new ObjectId(id) };
