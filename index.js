@@ -19,7 +19,7 @@ app.use(
     credentials: true,
   })
 );
-// app.use(express.json());
+
 app.use(express.json({ limit: "200mb" }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -49,6 +49,7 @@ const dbConnect = async () => {
       const result = await registrations.find().toArray();
       res.send(result);
     });
+
     app.get("/registration/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -63,7 +64,6 @@ const dbConnect = async () => {
       res.send(result);
     });
 
-    //working on it
     const fs = require("fs");
     const multer = require("multer");
     const path = require("path");
@@ -91,27 +91,10 @@ const dbConnect = async () => {
     const upload = multer({
       storage: storage,
       limits: { fileSize: 10 * 1024 * 1024 }, // Limit file size to 10MB
-      fileFilter: (req, file, cb) => {
-        const fileTypes = /jpeg|jpg|png|gif|bmp|webp|heic/;
-        const extname = fileTypes.test(
-          path.extname(file.originalname).toLowerCase()
-        );
-        const mimetype = fileTypes.test(file.mimetype);
-
-        if (extname && mimetype) {
-          return cb(null, true);
-        } else {
-          cb(
-            new Error(
-              "Only image formats (jpg, jpeg, png, gif, bmp, webp, heic) are allowed!"
-            )
-          );
-        }
-      },
     });
 
     // Store registration data
-    app.post(`/registrations`, upload.single("image"), async (req, res) => {
+    app.post(`/registrations`, upload.single("file"), async (req, res) => {
       try {
         const {
           firstName,
@@ -123,10 +106,10 @@ const dbConnect = async () => {
           companyDetails,
         } = req.body;
 
-        // Get the uploaded image's filename, or set to null if no image is uploaded
-        const imagePath = req.file ? `/files/${req.file.filename}` : null;
+        // Get the uploaded file's filename, or set to null if no file is uploaded
+        const filePath = req.file ? `/files/${req.file.filename}` : null;
 
-        // Safely handle optional fields like companyDetails and image
+        // Safely handle optional fields like companyDetails and file
         const registration = {
           firstName,
           lastName,
@@ -143,9 +126,9 @@ const dbConnect = async () => {
             country: companyDetails?.country || null,
             recruitCountry: companyDetails?.recruitCountry || null,
           },
-          image: {
-            name: req.file?.filename || null, // Save the filename or set null if no image
-            path: imagePath, // Full file path or null
+          file: {
+            name: req.file?.filename || null, // Save the filename or set null if no file
+            path: filePath, // Full file path or null
           },
           createdAt: new Date(), // Timestamp
         };
@@ -160,7 +143,6 @@ const dbConnect = async () => {
     });
 
     //start files api
-
     // Serve files from the /files directory
     app.get("/file/:filePath", (req, res) => {
       try {
