@@ -45,9 +45,30 @@ const dbConnect = async () => {
       res.send("Server is running");
     });
 
+    // Fetch all registration data
     app.get("/registrationsData", async (req, res) => {
-      const result = await registrations.find().toArray();
-      res.send(result);
+      try {
+        const result = await registrations.find().toArray();
+
+        // Check if any registrations are found
+        if (result.length === 0) {
+          return res.status(404).json({ message: "No registrations found" });
+        }
+
+        // Send the data with a success message
+        res.status(200).json({
+          message: "Registrations retrieved successfully",
+          data: result,
+        });
+      } catch (error) {
+        console.error("Error fetching registrations:", error.message);
+
+        // Send a 500 error if something goes wrong
+        res.status(500).json({
+          message: "Failed to fetch registrations",
+          error: error.message,
+        });
+      }
     });
 
     app.get("/registration/:id", async (req, res) => {
@@ -96,6 +117,8 @@ const dbConnect = async () => {
     // Store registration data
     app.post(`/registrations`, upload.single("file"), async (req, res) => {
       try {
+        console.log("Received form data:", req.body);
+        console.log("Received file data:", req.file);
         const {
           firstName,
           lastName,
