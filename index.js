@@ -90,9 +90,9 @@ const dbConnect = async () => {
 
     const upload = multer({
       storage: storage,
-      limits: { fileSize: 2 * 1024 * 1024 }, // Limit file size to 2MB
+      limits: { fileSize: 10 * 1024 * 1024 }, // Limit file size to 10MB
       fileFilter: (req, file, cb) => {
-        const fileTypes = /jpeg|jpg|png/;
+        const fileTypes = /jpeg|jpg|png|gif|bmp|webp|heic/;
         const extname = fileTypes.test(
           path.extname(file.originalname).toLowerCase()
         );
@@ -101,12 +101,16 @@ const dbConnect = async () => {
         if (extname && mimetype) {
           return cb(null, true);
         } else {
-          cb(new Error("Only .png, .jpg, and .jpeg format allowed!"));
+          cb(
+            new Error(
+              "Only image formats (jpg, jpeg, png, gif, bmp, webp, heic) are allowed!"
+            )
+          );
         }
       },
     });
 
-    // Updated POST /registrations endpoint
+    // Store registration data
     app.post(`/registrations`, upload.single("image"), async (req, res) => {
       try {
         const {
@@ -139,9 +143,10 @@ const dbConnect = async () => {
             recruitCountry: companyDetails?.recruitCountry,
           },
           image: {
-            path: imagePath,
+            name: req.file?.filename, // Save the filename
+            path: imagePath, // Full file path (for internal use)
           },
-          createdAt: new Date(), // Optional timestamp field
+          createdAt: new Date(),
         };
 
         const result = await registrations.insertOne(registration);
@@ -152,7 +157,27 @@ const dbConnect = async () => {
       }
     });
 
-    //end of store registration data
+    //start files api
+
+    // Serve files from the /files directory
+    app.get("/file/:filePath", (req, res) => {
+      try {
+        const filePath = req.params.filePath;
+        const fullPath = path.join(__dirname, "/files", filePath);
+
+        // Check if the file exists
+        if (fs.existsSync(fullPath)) {
+          res.sendFile(fullPath); // Serve the file directly for preview/download
+        } else {
+          res.status(404).send({ error: "File not found" });
+        }
+      } catch (error) {
+        console.error("Error serving file:", error.message);
+        res.status(500).send({ error: "Failed to retrieve the file" });
+      }
+    });
+
+    //end of files api
     app.patch("/registrationPatchStatus/:_id", async (req, res) => {
       const id = req.params._id;
       const query = { _id: new ObjectId(id) };
