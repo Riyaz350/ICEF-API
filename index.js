@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const sendMeetingEmail = require("./controllers/sendMeetingEmail");
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.gx7mkcg.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb://localhost:27017/icef`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -175,6 +175,30 @@ const dbConnect = async () => {
         // Check if the file exists
         if (fs.existsSync(fullPath)) {
           res.sendFile(fullPath); // Serve the file directly for preview/download
+        } else {
+          res.status(404).send({ error: "File not found" });
+        }
+      } catch (error) {
+        console.error("Error serving file:", error.message);
+        res.status(500).send({ error: "Failed to retrieve the file" });
+      }
+    });
+    //download files
+    // While the download attribute is supposed to trigger the download, some browsers may still open certain files (like images) in a new window.
+    // To fix this, you need to ensure the server properly sends the Content-Disposition header, forcing the file to be downloaded rather than
+    // displayed in the browser.
+    app.get("/file-download/:filePath", (req, res) => {
+      try {
+        const filePath = req.params.filePath;
+        const fullPath = path.join(__dirname, "/files", filePath);
+
+        // Check if the file exists
+        if (fs.existsSync(fullPath)) {
+          res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${filePath}"`
+          );
+          res.sendFile(fullPath); // Serve the file
         } else {
           res.status(404).send({ error: "File not found" });
         }
