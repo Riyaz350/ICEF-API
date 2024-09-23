@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const sendMeetingEmail = require("./controllers/sendMeetingEmail");
-const uri = `mongodb://localhost:27017/icef`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.gx7mkcg.mongodb.net/?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, {
   serverApi: {
